@@ -1,19 +1,17 @@
 const express = require('express');
 const db = require('../db');
+const asyncHandler = require('../middleware/asyncHandler');
 
 const router = express.Router();
 
 // POST /orders — create order
-router.post('/', async (req, res, next) => {
-    try {
+const {requireFields} = require('../middleware/validator');
+
+router.post('/', 
+    requireFields('customerId', 'drinkId', 'quantity'),
+    asyncHandler(async (req, res) => {
         const { customerId, drinkId, quantity } = req.body;
         
-        // Validation
-        if (!customerId || !drinkId || quantity === null) {
-            return res.status(400).json({ 
-                error: 'ต้องการ customerId, drinkId, quantity' 
-            });
-        }
         
         if (quantity <= 0) {
             return res.status(400).json({ error: 'quantity ต้อง > 0' });
@@ -55,14 +53,11 @@ router.post('/', async (req, res, next) => {
             total,
             order_date: newOrder.order_date
         });
-    } catch (err) {
-        next(err);
-    }
-});
+    
+}));
 
 // GET /orders — list orders with pagination
-router.get('/', async (req, res, next) => {
-    try {
+router.get('/', asyncHandler (async (req, res) => {
         const limit = Math.min(parseInt(req.query.limit) || 20, 100);
         const page = Math.max(parseInt(req.query.page) || 1, 1);
         const offset = (page - 1) * limit;
@@ -88,9 +83,7 @@ router.get('/', async (req, res, next) => {
             count: orders.length,
             data: orders
         });
-    } catch (err) {
-        next(err);
-    }
-});
+    
+}));
 
 module.exports = router;

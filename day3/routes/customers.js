@@ -1,12 +1,12 @@
 const express = require('express');
 const db = require('../db');
+const asyncHandler = require('../middleware/asyncHandler');
 
 const router = express.Router();
 
-router.get('/', async (req, res, next) => {
-  try {
-      const name = req.query.name;       
-      const city = req.query.city;      
+router.get('/', asyncHandler(async (req, res) => {
+      const name = req.query.name;       // ← เปลี่ยนชื่อ variable
+      const city = req.query.city;       // ← bonus: เพิ่ม filter city ด้วย
 
       let sql = 'SELECT * FROM customers';
       const params = [];
@@ -31,18 +31,15 @@ router.get('/', async (req, res, next) => {
       const customers = await db.query(sql, params);
       res.json(customers);
 
-  } catch (err) {
-      next(err);
-  }
-});
+  
+}));
 
-router.get('/:id', async (req, res, next) => {
-  try {
-        const id = parseInt(req.params.id); //it comes from the URL itself, not after `?`
-        
-        if (isNaN(id)) {
-            return res.status(400).json({ error: 'id ต้องเป็นตัวเลข' });
-        }
+const {validateId} = require('../middleware/validator');
+
+router.get('/:id', 
+    validateId,
+    asyncHandler(async (req, res) => {
+        const id = req.params.id; //it comes from the URL itself, not after `?`
         
         const customers = await db.query(
             'SELECT * FROM customers WHERE id = $1',
@@ -80,9 +77,7 @@ router.get('/:id', async (req, res, next) => {
             total_spent: totalSpent,
             orders: orders
         });
-    } catch (err) {
-        next(err);
-    }
-});
+   
+}));
 
 module.exports = router;
